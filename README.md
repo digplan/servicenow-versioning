@@ -1,50 +1,54 @@
 # servicenow-versioning
 Managing non-application customzations across instances
 
-A collection of customizations is defined, with an associated has value that specifies its version. This can be compared across instances. 
+A collection of customizations (updated records in any table) is defined.
 
-Collection is a json object with three keys:
-tables, containing an object with key of table name and stringarray of strings. each string is a table name and encoded query separated by a space
-collection_hash, a hash of the tables array
-version_hash, 
+*Collection* is a json object with the following keys:
+sn_instance: instance name
+collection: object with keys (tables) and values (encoded query)
+artifacts: object with keys (tablename, space, sysid of record) and values (UTC time of last updated)
+collection_hash, a hash of the collection, in 8 characters
+version_hash, a hash of the artifacts, in 8 characters
+
+Collection and Version hashes can be compared across instances.
 
 The tables are queried for their records' sysids and sys_updated_on values.
-
+````
 {
-  collection: 'qw1231whs283a10923a2qwij281qll12',  // hash of all tables and queries concatenated
-  version: '211wiu93uw99pq0on34se2qjks99knw',      // hash of all artifact values concatenated
-  sn_instance: 'dev20123',
-  collection_def: {
-     'sys_script' : 'sys_updated_byNOTLIKEsystem'
+  "sn_instance": "instancename",
+  "collection": {
+    "sys_script_include": "name=DiscoverySensor"
   },
-  'artifacts': {
-     'ww8rd3jd2wed28d3n7wqs8iwjjs9l0k' : '2017-12-25T11:45:00Z',
-     'qq18dek8sw88kloppqwsdj3ksm7ki33m' : '2016-09-20T07:11:11Z'
-  }
+  "artifacts": {
+    "sys_script_include da46a64c1323878848e8b7a66144b009": "2018-01-04 23:30:07"
+  },
+  "collection_hash": "713D7050",
+  "version_hash": "23B4CCCC"
 }
+````
 
 Reference implementation
-''''
+````
 var collection = {
-  sys_script: 'nameLIKEdosomething'
-}
+  sys_script_include: 'name=DiscoverySensor'
+};
+
+var calc = calculateVersionInfo(collection, 'instance_name');
+gs.log(JSON.stringify(calc, null, 2));
 
 function calculateVersionInfo(coll, instance){
-  var info = { sn_instance: instance, collection_def: coll, artifacts: {} };
-  var vdata = '';
-  
-  for(table in coll){
-    colldata += table + coll[table];
-    
-    var gr = new GlideRecord(table);
-    gr.addEncodedQuery(coll[table]);
+  var info = { sn_instance: instance, collection: coll, artifacts: {} };
+
+  for(var table in coll){
+	var gr = new GlideRecord(table); 
+	gr.addEncodedQuery(coll[table]);
     gr.query();
     while(gr.next())
-      vdata += gr.sys_id + isodate(gr.sys_updated_on);
+      info.artifacts[gr.getTableName() + ' ' + gr.getValue('sys_id')] = gr.sys_updated_on.getValue();
   }
-  var hasher = new GLIDEHASH();
-  info.collection = hasher.hash(json.str);
-  info.version = hasher.hash(vdata);
+  info.collection_hash = (new GlideChecksum(JSON.stringify(info.collection))).getMD5().slice(0, 8).toUpperCase();
+  info.version_hash = (new GlideChecksum(JSON.stringify(info.artifacts))).getMD5().slice(0, 8).toUpperCase();
+
   return info;
 }
-''''
+````
