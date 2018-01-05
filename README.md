@@ -4,10 +4,15 @@ Managing non-application customzations across instances
 A collection of customizations (updated records in any table) is defined.
 
 *Collection* is a json object with the following keys:
+
 sn_instance: instance name
+
 collection: object with keys (tables) and values (encoded query)
+
 artifacts: object with keys (tablename, space, sysid of record) and values (UTC time of last updated)
+
 collection_hash, a hash of the collection, in 8 characters
+
 version_hash, a hash of the artifacts, in 8 characters
 
 Collection and Version hashes can be compared across instances.
