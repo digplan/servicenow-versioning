@@ -14,13 +14,12 @@ The tables are queried for their records' sysids and sys_updated_on values.
   collection: 'qw1231whs283a10923a2qwij281qll12',  // hash of all tables and queries concatenated
   version: '211wiu93uw99pq0on34se2qjks99knw',      // hash of all artifact values concatenated
   sn_instance: 'dev20123',
-  
-  sys_script: {
-       'query': 'sys_updated_byNOTLIKEsystem',
-       'artifacts': {
-          'ww8rd3jd2wed28d3n7wqs8iwjjs9l0k 2017-12-25T11:45:00Z',
-          'qq18dek8sw88kloppqwsdj3ksm7ki33m 2016-09-20T07:11:11Z'
-       }
+  collection_def: {
+     'sys_script' : 'sys_updated_byNOTLIKEsystem'
+  },
+  'artifacts': {
+     'ww8rd3jd2wed28d3n7wqs8iwjjs9l0k' : '2017-12-25T11:45:00Z',
+     'qq18dek8sw88kloppqwsdj3ksm7ki33m' : '2016-09-20T07:11:11Z'
   }
 }
 
@@ -31,8 +30,7 @@ var collection = {
 }
 
 function calculateVersionInfo(coll, instance){
-  var info = { sn_instance: instance };
-  var colldata = '';
+  var info = { sn_instance: instance, collection_def: coll, artifacts: {} };
   var vdata = '';
   
   for(table in coll){
@@ -45,7 +43,7 @@ function calculateVersionInfo(coll, instance){
       vdata += gr.sys_id + isodate(gr.sys_updated_on);
   }
   var hasher = new GLIDEHASH();
-  info.collection = hasher.hash(collinfo);
+  info.collection = hasher.hash(json.str);
   info.version = hasher.hash(vdata);
   return info;
 }
