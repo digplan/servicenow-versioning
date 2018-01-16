@@ -35,8 +35,8 @@ This is run against one or more ServiceNow instances and generates the customer 
     "sys_script 15498683130df60048e3b7a66144b0ef": "2017-10-06 13:34:57"
   }
   "table_hashes": {
-    "sys_script": "CD12098 1",
-    "sysevent_in_email_action": "6EC4A20 1"
+    "sys_script 1": "CD12098",
+    "sysevent_in_email_action 1": "6EC4A20"
   },
   "collection_hash": "9339766",
   "version_hash": "8D7B65D"
