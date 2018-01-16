@@ -1,63 +1,45 @@
 # servicenow-versioning
-Managing non-application customzations across instances
+Diff customzations across ServiceNow instances
 
-A collection of customizations (updated records in any table) is defined.
+A collection of customizations is defined, called an *InstanceState*. This can be used to compare updated records to other instances.  
 
-*Collection* is a json object with the following keys:
+###InstanceState is a json object with the following keys:
 
     sn_instance: instance name
     collection: object with keys (tables) and values (encoded query)
-    artifacts: object with keys (tablename, space, sysid of record) and values (UTC time of last updated)
-    table_hashes: 
-    collection_hash, a hash of the collection, in 8 characters
-    version_hash, a hash of the artifacts, in 8 characters
+    artifacts: object with keys (tablename) " " + sysid of record), and values (UTC time of last updated)
+    table_hashes: Object with tablename + " " + number of artifacts, and values HASH of artifcats
+    collection_hash, a HASH of the collection, in 8 characters
+    version_hash, HASH of the artifacts, in 8 characters
 
-Collection and Version hashes can be compared across instances.
+For instance, a collection may be defined like this, which will capture all the records updated by *billd*.
+````
+{
+  "collection": {
+    "sys_script_include": "sys_updated_byLIKEbilld",
+    "sys_script": "sys_updated_byLIKEbilld"
+  }
+}
+````
 
-The tables are queried for their records' sysids and sys_updated_on values.
+This is run against one or more ServiceNow instances and generates the customer updates for that instance.  For instance, the result for instance1 is:
 ````
 {
   "sn_instance": "instancename",
   "collection": {
-    "sys_script_include": "name=DiscoverySensors"
-  },
-  "artifacts": {
-    "sys_script_include da46a64c1323878841e8b7a06144b039": "2018-01-04 23:30:07"
-  },
-  "table_hashes": {
-    "sys_script_include": "D41D8CD"
-  },
-  "collection_hash": "713D705",
-  "version_hash": "23B4CCC"
-}
-````
-
-Reference implementation
-````
-var collection = {
-  sys_script_include: 'name=DiscoverySensors'
-};
-
-var calc = calculateVersionInfo(collection, 'instancename');
-gs.log(JSON.stringify(calc, null, 2));
-
-function calculateVersionInfo(coll, instance){
-  var info = { sn_instance: instance, collection: coll, artifacts: {}, table_hashes: {} };
-
-  for(var table in coll){
-	var tblhash = '';
-	var gr = new GlideRecord(table); 
-	gr.addEncodedQuery(coll[table]);
-    gr.query();
-    while(gr.next()){
-      tblhash += gr.getTableName() + ' ' + gr.getValue('sys_id');
-      info.artifacts[gr.getTableName() + ' ' + gr.getValue('sys_id')] = gr.sys_updated_on.getValue();
-    }
-    info.table_hashes[table] = (new GlideChecksum(tblhash)).getMD5().slice(0, 7).toUpperCase();
+    "sys_script_include": "sys_updated_byLIKEbilld",
+    "sys_script": "sys_updated_byLIKEbilld"
   }
-  info.collection_hash = (new GlideChecksum(JSON.stringify(info.collection))).getMD5().slice(0, 7).toUpperCase();
-  info.version_hash = (new GlideChecksum(JSON.stringify(info.artifacts))).getMD5().slice(0, 7).toUpperCase();
-
-  return info;
+  "artifacts": {
+    "sys_script_include 13903ddf1100c30006877e776144b0d2": "2017-07-24 22:04:27",
+    "sys_script 15498683130df60048e3b7a66144b0ef": "2017-10-06 13:34:57"
+  }
+  "table_hashes": {
+    "sys_script": "CD12098 1",
+    "sysevent_in_email_action": "6EC4A20 1"
+  },
+  "collection_hash": "9339766",
+  "version_hash": "8D7B65D"
 }
 ````
+Collection is the records included in scope.  A hash is simply the result of new GlideChecksum(tblhash)).getMD5().    
